@@ -11,7 +11,7 @@ let gameData = Array(9).fill('');
 let active = true;
 let audioCtx = null;
 
-// 오디오 엔진 초기화 함수
+// 오디오 엔진 초기화 (모바일 잠금 해제용)
 function initAudio() {
     if (!audioCtx) {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -36,14 +36,14 @@ function playDingSound() {
     osc.stop(audioCtx.currentTime + 0.5);
 }
 
-// 2. 칸 클릭용 "연필 긋는" 소리 (화이트 노이즈 활용)
+// 2. 1초 연필 사각거리는 소리
 function playPencilSound() {
     initAudio();
-    const bufferSize = audioCtx.sampleRate * 0.1; // 0.1초 동안 재생
+    const duration = 1.0; 
+    const bufferSize = audioCtx.sampleRate * duration;
     const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
     const data = buffer.getChannelData(0);
 
-    // 사각거리는 노이즈 생성
     for (let i = 0; i < bufferSize; i++) {
         data[i] = Math.random() * 2 - 1;
     }
@@ -52,22 +52,26 @@ function playPencilSound() {
     noise.buffer = buffer;
 
     const filter = audioCtx.createBiquadFilter();
-    filter.type = 'bandpass'; // 연필 특유의 주파수 대역만 통과
-    filter.frequency.setValueAtTime(1000, audioCtx.currentTime);
-    filter.Q.setValueAtTime(1, audioCtx.currentTime);
+    filter.type = 'bandpass'; 
+    filter.frequency.setValueAtTime(1500, audioCtx.currentTime); 
+    filter.Q.setValueAtTime(2, audioCtx.currentTime);
 
     const gain = audioCtx.createGain();
-    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0, audioCtx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.15, audioCtx.currentTime + 0.1); 
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
 
     noise.connect(filter);
     filter.connect(gain);
     gain.connect(audioCtx.destination);
-
     noise.start();
 }
 
-mainLogo.onclick = playDingSound;
+mainLogo.onclick = () => {
+    playDingSound();
+    mainLogo.style.filter = "drop-shadow(0 0 20px #fff)";
+    setTimeout(() => mainLogo.style.filter = "drop-shadow(0 0 10px rgba(255, 255, 255, 0.2))", 200);
+};
 
 document.getElementById('start-btn').onclick = () => {
     initAudio();
@@ -105,15 +109,14 @@ function buildBoard() {
 function play(el, idx) {
     if(gameData[idx] !== '' || !active) return;
     
-    playPencilSound(); // 칸을 누를 때 연필 소리 재생!
+    playPencilSound(); // 연필 소리 재생
     
     el.classList.add('clicked');
     gameData[idx] = turn;
 
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.setAttribute("viewBox", "0 0 100 100");
-    svg.style.width = "70%";
-    svg.style.height = "70%";
+    svg.style.width = "70%"; svg.style.height = "70%";
 
     if(turn === 'X') {
         svg.innerHTML = `
@@ -127,18 +130,14 @@ function play(el, idx) {
     if(checkWinner()) {
         showResult(`${turn} 승리!`);
         active = false;
-        return;
-    }
-    
-    if(!gameData.includes('')) {
+    } else if(!gameData.includes('')) {
         showResult("무승부!");
         active = false;
-        return;
+    } else {
+        turn = turn === 'X' ? 'O' : 'X';
+        turnDisplay.textContent = turn;
+        turnDisplay.className = `player-${turn.toLowerCase()}`;
     }
-
-    turn = turn === 'X' ? 'O' : 'X';
-    turnDisplay.textContent = turn;
-    turnDisplay.className = `player-${turn.toLowerCase()}`;
 }
 
 function showResult(text) {
@@ -158,17 +157,12 @@ function startFireworks() {
             p.style.left = Math.random() * 100 + 'vw';
             p.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
             const size = Math.random() * 6 + 3;
-            p.style.width = size + 'px';
-            p.style.height = size + 'px';
+            p.style.width = size + 'px'; p.style.height = size + 'px';
             document.body.appendChild(p);
-
             p.animate([
                 { transform: 'translateY(0) rotate(0deg)', opacity: 1 },
                 { transform: `translateY(110vh) rotate(${Math.random() * 720}deg)`, opacity: 0 }
-            ], {
-                duration: Math.random() * 2000 + 2000,
-                easing: 'linear'
-            });
+            ], { duration: Math.random() * 2000 + 2000, easing: 'linear' });
             setTimeout(() => p.remove(), 4000);
         }, i * 80);
     }
