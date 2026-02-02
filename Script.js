@@ -11,7 +11,6 @@ let gameData = Array(9).fill('');
 let active = true;
 let audioCtx = null;
 
-// 오디오 엔진 초기화 (모바일 잠금 해제용)
 function initAudio() {
     if (!audioCtx) {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -21,7 +20,7 @@ function initAudio() {
     }
 }
 
-// 1. 로고용 "띵" 소리
+// 로고용 "띵" 소리
 function playDingSound() {
     initAudio();
     const osc = audioCtx.createOscillator();
@@ -36,14 +35,15 @@ function playDingSound() {
     osc.stop(audioCtx.currentTime + 0.5);
 }
 
-// 2. 1초 연필 사각거리는 소리
+// 튜닝된 "스으윽-" 연필 소리
 function playPencilSound() {
     initAudio();
-    const duration = 1.0; 
+    const duration = 0.8; 
     const bufferSize = audioCtx.sampleRate * duration;
     const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
     const data = buffer.getChannelData(0);
 
+    // 노이즈 생성
     for (let i = 0; i < bufferSize; i++) {
         data[i] = Math.random() * 2 - 1;
     }
@@ -51,18 +51,25 @@ function playPencilSound() {
     const noise = audioCtx.createBufferSource();
     noise.buffer = buffer;
 
-    const filter = audioCtx.createBiquadFilter();
-    filter.type = 'bandpass'; 
-    filter.frequency.setValueAtTime(1500, audioCtx.currentTime); 
-    filter.Q.setValueAtTime(2, audioCtx.currentTime);
+    // "딱" 소리 방지를 위한 필터 레이어
+    const lowFilter = audioCtx.createBiquadFilter();
+    lowFilter.type = 'lowpass';
+    lowFilter.frequency.setValueAtTime(3000, audioCtx.currentTime);
+
+    const bandFilter = audioCtx.createBiquadFilter();
+    bandFilter.type = 'bandpass';
+    bandFilter.frequency.setValueAtTime(1200, audioCtx.currentTime); 
+    bandFilter.Q.setValueAtTime(0.5, audioCtx.currentTime);
 
     const gain = audioCtx.createGain();
     gain.gain.setValueAtTime(0, audioCtx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.15, audioCtx.currentTime + 0.1); 
+    // 0.2초 동안 부드럽게 소리가 올라옴 (스윽-)
+    gain.gain.linearRampToValueAtTime(0.08, audioCtx.currentTime + 0.2); 
     gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
 
-    noise.connect(filter);
-    filter.connect(gain);
+    noise.connect(lowFilter);
+    lowFilter.connect(bandFilter);
+    bandFilter.connect(gain);
     gain.connect(audioCtx.destination);
     noise.start();
 }
@@ -109,7 +116,7 @@ function buildBoard() {
 function play(el, idx) {
     if(gameData[idx] !== '' || !active) return;
     
-    playPencilSound(); // 연필 소리 재생
+    playPencilSound();
     
     el.classList.add('clicked');
     gameData[idx] = turn;
