@@ -6,6 +6,9 @@ const startScreen = document.getElementById('start-screen');
 const gameScreen = document.getElementById('game-screen');
 const mainLogo = document.getElementById('main-logo');
 
+// [중요] 박수 소리 파일 호출 (같은 폴더에 applause.wav가 있어야 함)
+const winSound = new Audio('applause.wav'); 
+
 let turn = 'X';
 let gameData = Array(9).fill('');
 let active = true;
@@ -16,20 +19,10 @@ function initAudio() {
     if (audioCtx.state === 'suspended') audioCtx.resume();
 }
 
-function playDingSound() {
-    initAudio();
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.frequency.setValueAtTime(880, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.5);
-    osc.connect(gain).connect(audioCtx.destination);
-    osc.start(); osc.stop(audioCtx.currentTime + 0.5);
-}
-
-// 모래 소리를 잡은 튜닝된 "스윽" 소리
+// 리얼 연필 소리 (화이트 노이즈 + 필터)
 function playPencilSound() {
     initAudio();
-    const duration = 0.6;
+    const duration = 0.5;
     const bufferSize = audioCtx.sampleRate * duration;
     const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
     const data = buffer.getChannelData(0);
@@ -38,43 +31,19 @@ function playPencilSound() {
     const noise = audioCtx.createBufferSource();
     noise.buffer = buffer;
 
-    // 800Hz 근처의 묵직한 소리만 남김 (모래 소리 제거)
     const bandFilter = audioCtx.createBiquadFilter();
     bandFilter.type = 'bandpass';
-    bandFilter.frequency.setValueAtTime(800, audioCtx.currentTime);
-    bandFilter.Q.setValueAtTime(1.5, audioCtx.currentTime);
-
-    const lowFilter = audioCtx.createBiquadFilter();
-    lowFilter.type = 'lowpass';
-    lowFilter.frequency.setValueAtTime(1500, audioCtx.currentTime);
+    bandFilter.frequency.setValueAtTime(1000, audioCtx.currentTime);
+    bandFilter.Q.setValueAtTime(2, audioCtx.currentTime);
 
     const gain = audioCtx.createGain();
     gain.gain.setValueAtTime(0, audioCtx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.12, audioCtx.currentTime + 0.05); 
-    gain.gain.linearRampToValueAtTime(0.1, audioCtx.currentTime + duration - 0.1);
+    gain.gain.linearRampToValueAtTime(0.1, audioCtx.currentTime + 0.05);
     gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
 
-    noise.connect(bandFilter).connect(lowFilter).connect(gain).connect(audioCtx.destination);
+    noise.connect(bandFilter).connect(gain).connect(audioCtx.destination);
     noise.start();
 }
-
-mainLogo.onclick = playDingSound;
-
-document.getElementById('start-btn').onclick = () => {
-    initAudio();
-    startScreen.classList.replace('active', 'hidden');
-    gameScreen.classList.replace('hidden', 'active');
-    buildBoard();
-};
-
-document.getElementById('back-btn').onclick = () => {
-    resultBanner.classList.remove('show');
-    gameScreen.classList.replace('active', 'hidden');
-    startScreen.classList.replace('hidden', 'active');
-    active = false;
-};
-
-document.getElementById('banner-restart-btn').onclick = buildBoard;
 
 function buildBoard() {
     board.innerHTML = ''; gameData.fill(''); active = true; turn = 'X';
@@ -91,40 +60,48 @@ function buildBoard() {
 function play(el, idx) {
     if(gameData[idx] !== '' || !active) return;
     playPencilSound();
-    el.classList.add('clicked');
     gameData[idx] = turn;
+    
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.setAttribute("viewBox", "0 0 100 100");
-    svg.style.width = "70%"; svg.style.height = "70%";
     if(turn === 'X') {
-        svg.innerHTML = `<line x1="20" y1="20" x2="80" y2="80" class="draw-path" style="stroke:#e94560;" />
-                         <line x1="80" y1="20" x2="20" y2="80" class="draw-path" style="stroke:#e94560;animation-delay:0.2s;" />`;
+        svg.innerHTML = `<line x1="25" y1="25" x2="75" y2="75" class="draw-path" style="stroke:var(--player-x);" />
+                         <line x1="75" y1="25" x2="25" y2="75" class="draw-path" style="stroke:var(--player-x);animation-delay:0.1s;" />`;
     } else {
-        svg.innerHTML = `<circle cx="50" cy="50" r="35" class="draw-path" style="stroke:#4cc9f0;" />`;
+        svg.innerHTML = `<circle cx="50" cy="50" r="30" class="draw-path" style="stroke:var(--player-o);" />`;
     }
     el.appendChild(svg);
+
     if(checkWinner()) { showResult(turn + " 승리!"); active = false; }
     else if(!gameData.includes('')) { showResult("무승부!"); active = false; }
     else { turn = turn === 'X' ? 'O' : 'X'; turnDisplay.textContent = turn; turnDisplay.className = `player-${turn.toLowerCase()}`; }
 }
 
 function showResult(t) {
-    winnerText.textContent = t; resultBanner.classList.add('show');
-    for (let i = 0; i < 30; i++) {
+    winnerText.textContent = t;
+    resultBanner.classList.add('show');
+    
+    // 승리 시 박수 소리 재생
+    if (t.includes("승리")) {
+        winSound.currentTime = 0;
+        winSound.play().catch(e => console.log("오디오 실패:", e));
+        startFireworks();
+    }
+}
+
+function startFireworks() {
+    for (let i = 0; i < 40; i++) {
         const p = document.createElement('div');
-        p.className = 'particle'; p.style.left = Math.random() * 100 + 'vw';
-        p.style.top = '-10px'; p.style.width = '5px'; p.style.height = '5px';
+        p.className = 'particle';
+        p.style.left = Math.random() * 100 + 'vw';
+        p.style.top = '-10px';
+        p.style.width = p.style.height = Math.random() * 8 + 4 + 'px';
         p.style.backgroundColor = ['#ff4d4d', '#4cc9f0', '#f1c40f'][Math.floor(Math.random()*3)];
         document.body.appendChild(p);
-        p.animate([{transform:'translateY(0)'}, {transform:'translateY(100vh)'}], {duration: 2000 + Math.random()*2000});
+        p.animate([{transform:'translateY(0)'}, {transform:`translateY(105vh) rotate(${Math.random()*360}deg)`}], {duration: 2000 + Math.random()*2000});
         setTimeout(() => p.remove(), 4000);
     }
 }
 
 function checkWinner() {
-    const lines = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
-    return lines.some(l => gameData[l[0]] && gameData[l[0]] === gameData[l[1]] && gameData[l[0]] === gameData[l[2]]);
-}
-
-document.getElementById('info-btn').onclick = () => document.getElementById('modal').classList.remove('hidden');
-document.getElementById('close-modal-btn').onclick = () => document.getElementById('modal').classList.add('hidden');
+    const lines = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4
