@@ -1,3 +1,4 @@
+/* 기본 테마 및 색상 변수 */
 :root {
     --bg: #1a1a2e;
     --board: #16213e;
@@ -7,15 +8,31 @@
     --gold: #f1c40f;
 }
 
+/* 기본 레이아웃 설정 */
 body { 
     margin: 0; 
     background: var(--bg); 
     color: white; 
-    font-family: 'Arial Black', sans-serif; 
+    font-family: 'Arial Black', 'Apple SD Gothic Neo', sans-serif; 
     overflow: hidden; 
 }
 
-/* 화면 전환 레이아웃 */
+/* 로고 스타일 (크기 조절됨) */
+.title-logo {
+    width: 80px; /* 여기서 크기를 더 줄이려면 숫자를 낮추세요 (예: 60px) */
+    height: auto;
+    margin-bottom: 10px;
+    filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.2));
+    animation: floating 3s ease-in-out infinite;
+}
+
+/* 로고 둥둥 떠있는 효과 */
+@keyframes floating {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+/* 화면 전환 시스템 */
 .screen { 
     width: 100vw; 
     height: 100vh; 
@@ -26,16 +43,31 @@ body {
     position: absolute; 
     transition: 0.5s; 
 }
-
 .hidden { opacity: 0; pointer-events: none; transform: scale(0.9); }
 .active { opacity: 1; pointer-events: auto; transform: scale(1); }
 
+/* 메인 타이틀 */
 .main-title { 
-    font-size: 4rem; 
-    margin-bottom: 40px; 
+    font-size: 3.5rem; 
+    margin: 0 0 40px 0; 
     text-shadow: 0 10px 20px rgba(0,0,0,0.5); 
     letter-spacing: 5px; 
 }
+
+/* 버튼 공통 스타일 */
+.main-btn { 
+    padding: 15px 45px; 
+    font-size: 1.2rem; 
+    border: none; 
+    border-radius: 12px; 
+    cursor: pointer; 
+    font-weight: bold; 
+    transition: 0.2s; 
+    margin: 10px; 
+}
+.primary { background: var(--x-color); color: white; }
+.secondary { background: var(--o-color); color: white; }
+.main-btn:hover { transform: translateY(-3px); filter: brightness(1.1); }
 
 /* 상단 정보바 */
 .top-bar { 
@@ -48,7 +80,6 @@ body {
     border-radius: 50px; 
     z-index: 10; 
 }
-
 .icon-btn { 
     padding: 8px 15px; 
     background: rgba(255, 255, 255, 0.1); 
@@ -58,11 +89,12 @@ body {
     cursor: pointer; 
 }
 
+/* 차례 표시기 */
 #turn-display { font-size: 1.8rem; font-weight: 900; }
 .player-x { color: var(--x-color); text-shadow: 0 0 10px var(--x-color); }
 .player-o { color: var(--o-color); text-shadow: 0 0 10px var(--o-color); }
 
-/* 3D 게임 보드 */
+/* 3D 보드 레이아웃 */
 .view-3d { perspective: 1000px; padding: 20px; }
 .board {
     display: grid; 
@@ -75,7 +107,7 @@ body {
     box-shadow: 0 25px 50px rgba(0,0,0,0.6);
 }
 
-/* 셀 스타일 및 눌림 효과 */
+/* 셀(칸) 스타일 */
 .cell {
     width: 100px; 
     height: 100px; 
@@ -89,28 +121,24 @@ body {
     align-items: center; 
     justify-content: center;
 }
-
-/* 클릭 시 쑥 들어가는 모션 */
+.cell:hover { background: #133e6f; }
 .cell.clicked { 
     transform: translateY(6px); 
     box-shadow: 0 2px 0 #081b33; 
 }
 
-/* SVG 애니메이션 (원이 끝까지 그려지도록 400 설정) */
+/* SVG 도형 애니메이션 */
 .draw-path { 
     fill: none; 
     stroke-width: 10; 
     stroke-linecap: round; 
     stroke-dasharray: 400; 
     stroke-dashoffset: 400; 
-    animation: dash 1s ease-out forwards; 
+    animation: dash 0.6s ease-out forwards; 
 }
+@keyframes dash { to { stroke-dashoffset: 0; } }
 
-@keyframes dash { 
-    to { stroke-dashoffset: 0; } 
-}
-
-/* 클래시 로얄 스타일 결과 배너 */
+/* 결과 배너 (클래시 로얄 스타일) */
 #result-banner {
     position: fixed; 
     top: -300px; 
@@ -124,19 +152,16 @@ body {
     z-index: 1000; 
     pointer-events: none;
 }
-
 #result-banner.show { 
     transform: translateY(450px); 
     pointer-events: auto; 
 }
-
-.banner-content {
-    background: linear-gradient(90deg, transparent, rgba(0,0,0,0.9), transparent);
+.banner-content { 
+    background: linear-gradient(90deg, transparent, rgba(0,0,0,0.9), transparent); 
     width: 100%; 
     text-align: center; 
-    padding: 30px;
+    padding: 30px; 
 }
-
 #winner-text { 
     font-size: 4rem; 
     margin: 0; 
@@ -145,39 +170,26 @@ body {
     letter-spacing: 5px; 
 }
 
-/* 시작 및 다시하기 버튼 */
-.main-btn, .restart-btn { 
+/* 다시하기 버튼 */
+.restart-btn { 
+    margin-top: 20px; 
     padding: 12px 35px; 
     font-size: 1.2rem; 
-    border: none; 
-    border-radius: 50px; 
-    cursor: pointer; 
-    font-weight: 900; 
-    transition: 0.2s; 
-}
-
-.primary { background: var(--x-color); color: white; }
-.secondary { background: var(--o-color); color: white; }
-.restart-btn { 
     background: var(--gold); 
     color: #000; 
+    border: none; 
+    border-radius: 50px; 
+    font-weight: 900; 
+    cursor: pointer; 
     box-shadow: 0 5px 0 #b8950c; 
-    margin-top: 20px;
+    transition: 0.1s; 
 }
-
-.main-btn:hover { transform: translateY(-3px); filter: brightness(1.1); }
 .restart-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #b8950c; }
 
-/* 폭죽 입자 */
-.particle { 
-    position: fixed; 
-    top: -20px; 
-    border-radius: 2px; 
-    pointer-events: none; 
-    z-index: 999; 
-}
+/* 폭죽 파티클 */
+.particle { position: fixed; top: -20px; border-radius: 2px; pointer-events: none; z-index: 999; }
 
-/* 모달 스타일 */
+/* 모달창 스타일 */
 .modal { 
     position: fixed; 
     top:0; left:0; width:100%; height:100%; 
@@ -185,9 +197,7 @@ body {
     display: flex; justify-content: center; align-items: center; 
     z-index: 2000; 
 }
-
 .modal.hidden { display: none; }
-
 .modal-content { 
     background: white; 
     color: black; 
@@ -195,15 +205,16 @@ body {
     border-radius: 20px; 
     text-align: center; 
     width: 300px; 
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
 }
-
 .close-btn { 
     margin-top: 20px; 
     width: 100%; 
-    padding: 10px; 
+    padding: 12px; 
     border: none; 
     background: var(--bg); 
     color: white; 
     border-radius: 10px; 
     cursor: pointer; 
+    font-weight: bold;
 }
