@@ -8,7 +8,7 @@ function initAudio() {
     try {
         if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         if (audioCtx.state === 'suspended') audioCtx.resume();
-    } catch (e) { console.log(e); }
+    } catch (e) { console.error("오디오 초기화 실패"); }
 }
 
 function playDingSound() {
@@ -57,9 +57,13 @@ function startFireworks() {
 }
 
 function buildBoard() {
-    winSound.pause(); winSound.currentTime = 0;
+    winSound.pause(); 
+    winSound.currentTime = 0;
     const board = document.getElementById('board');
-    board.innerHTML = ''; gameData.fill(''); active = true; turn = 'X';
+    board.innerHTML = ''; 
+    gameData.fill(''); 
+    active = true; 
+    turn = 'X';
     document.getElementById('turn-display').textContent = 'X';
     document.getElementById('result-banner').classList.remove('show');
     for (let i = 0; i < 9; i++) {
@@ -88,7 +92,10 @@ function showResult(t) {
     document.getElementById('winner-text').textContent = t;
     document.getElementById('result-banner').classList.add('show');
     active = false;
-    if (t.includes("승리")) { winSound.play().catch(e=>{}); startFireworks(); }
+    if (t.includes("승리")) { 
+        winSound.play().catch(() => {}); 
+        startFireworks(); 
+    }
 }
 
 function checkWinner() {
