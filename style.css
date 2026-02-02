@@ -7,57 +7,38 @@
 }
 
 body {
-    margin: 0; font-family: 'Segoe UI', sans-serif;
-    background: var(--bg); color: white;
+    margin: 0; background-color: var(--bg); color: white;
     display: flex; justify-content: center; align-items: center;
-    height: 100vh; overflow: hidden; touch-action: manipulation;
+    height: 100vh; font-family: 'Segoe UI', sans-serif;
 }
 
-.screen { text-align: center; transition: 0.5s; flex-direction: column; align-items: center; }
-.hidden { display: none; }
-.active { display: flex; }
+#game-container { text-align: center; }
 
-#main-logo { font-size: 3rem; color: var(--accent); cursor: pointer; text-shadow: 0 0 15px var(--accent); }
-
-button {
-    padding: 12px 30px; margin: 10px; border: none; border-radius: 25px;
-    background: var(--accent); color: white; font-weight: bold; cursor: pointer;
+#main-logo {
+    font-size: 3rem; color: var(--accent); cursor: pointer;
+    text-shadow: 0 0 15px rgba(233, 69, 96, 0.4);
 }
+
+#status { margin-bottom: 20px; font-size: 1.2rem; font-weight: bold; }
 
 #board {
     display: grid; grid-template-columns: repeat(3, 100px);
-    grid-template-rows: repeat(3, 100px); gap: 15px; margin-top: 20px;
+    gap: 15px; margin-bottom: 20px;
 }
 
 .cell {
-    background: var(--card); border-radius: 15px; display: flex;
-    justify-content: center; align-items: center; cursor: pointer;
-    box-shadow: 5px 5px 15px rgba(0,0,0,0.3); width: 100px; height: 100px;
+    width: 100px; height: 100px; background: var(--card);
+    border-radius: 15px; display: flex; justify-content: center;
+    align-items: center; cursor: pointer; transition: 0.2s;
 }
 
-/* SVG 선 애니메이션 설정 */
 .draw-path {
-    fill: none;
-    stroke-dasharray: 300;
-    stroke-dashoffset: 300;
-    animation: draw 0.5s ease-out forwards;
+    fill: none; stroke-dasharray: 200; stroke-dashoffset: 200;
+    animation: draw 1s ease-out forwards;
 }
+@keyframes draw { to { stroke-dashoffset: 0; } }
 
-@keyframes draw {
-    to { stroke-dashoffset: 0; }
+button {
+    padding: 12px 25px; background: var(--accent); color: white;
+    border: none; border-radius: 25px; font-weight: bold; cursor: pointer;
 }
-
-#result-banner {
-    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0);
-    background: rgba(22, 33, 62, 0.95); padding: 40px; border-radius: 30px;
-    border: 3px solid var(--accent); text-align: center; transition: 0.4s; z-index: 100;
-}
-#result-banner.show { transform: translate(-50%, -50%) scale(1); }
-
-#modal {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.85); display: flex; justify-content: center; align-items: center; z-index: 2000;
-}
-.modal-content { background: var(--card); padding: 30px; border-radius: 20px; border: 2px solid var(--accent); }
-
-.particle { position: fixed; pointer-events: none; border-radius: 50%; z-index: 1000; }
