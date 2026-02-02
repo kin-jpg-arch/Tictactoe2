@@ -80,7 +80,7 @@ body {
 }
 .cell.clicked { transform: translateY(6px); box-shadow: 0 2px 0 #081b33; }
 
-.draw-path { fill: none; stroke-width: 10; stroke-linecap: round; stroke-dasharray: 400; stroke-dashoffset: 400; animation: dash 0.6s ease-out forwards; }
+.draw-path { fill: none; stroke-width: 10; stroke-linecap: round; stroke-dasharray: 400; stroke-dashoffset: 400; animation: dash 1s ease-out forwards; }
 @keyframes dash { to { stroke-dashoffset: 0; } }
 
 #result-banner {
