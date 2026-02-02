@@ -1,26 +1,27 @@
-// 전역 변수 설정
+// 1. 전역 변수 및 오디오 설정
 const winSound = new Audio('applause.wav');
 let audioCtx = null;
 let turn = 'X';
 let gameData = Array(9).fill('');
 let active = true;
 
-// 오디오 초기화 (에러 방지용)
+// 오디오 컨텍스트 초기화 (사용자 클릭 시 실행)
 function initAudio() {
     try {
         if (!audioCtx) {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         }
         if (audioCtx.state === 'suspended') audioCtx.resume();
-    } catch (e) { console.log("오디오 초기화 실패:", e); }
+    } catch (e) { console.error("오디오 초기화 에러:", e); }
 }
 
-// 로고 전자음
+// 로고 클릭 시 '띵' 소리 (전자음)
 function playDingSound() {
     initAudio();
-    if(!audioCtx) return;
+    if (!audioCtx) return;
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
+    osc.type = 'sine';
     osc.frequency.setValueAtTime(880, audioCtx.currentTime);
     gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.5);
@@ -28,10 +29,10 @@ function playDingSound() {
     osc.start(); osc.stop(audioCtx.currentTime + 0.5);
 }
 
-// 최신 연필 소리
+// 최신 사각사각 연필 소리
 function playPencilSound() {
     initAudio();
-    if(!audioCtx) return;
+    if (!audioCtx) return;
     const duration = 0.3;
     const buffer = audioCtx.createBuffer(1, audioCtx.sampleRate * duration, audioCtx.sampleRate);
     const data = buffer.getChannelData(0);
@@ -43,14 +44,20 @@ function playPencilSound() {
     filter.type = 'bandpass';
     filter.frequency.setValueAtTime(1500, audioCtx.currentTime);
     const gain = audioCtx.createGain();
-    gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
 
     noise.connect(filter).connect(gain).connect(audioCtx.destination);
     noise.start();
 }
 
-// 폭죽 효과
+// 다시 시작 시 박수 소리 멈춤
+function stopApplause() {
+    winSound.pause();
+    winSound.currentTime = 0;
+}
+
+// 폭죽 효과 (입자 생성)
 function startFireworks() {
     const colors = ['#e94560', '#4cc9f0', '#f1c40f'];
     for (let i = 0; i < 40; i++) {
@@ -70,12 +77,15 @@ function startFireworks() {
     }
 }
 
-// 보드 생성
+// 게임 보드 초기화
 function buildBoard() {
-    winSound.pause(); winSound.currentTime = 0;
+    stopApplause();
     const board = document.getElementById('board');
-    if(!board) return;
-    board.innerHTML = ''; gameData.fill(''); active = true; turn = 'X';
+    if (!board) return;
+    board.innerHTML = ''; 
+    gameData.fill(''); 
+    active = true; 
+    turn = 'X';
     document.getElementById('turn-display').textContent = 'X';
     document.getElementById('turn-display').className = 'player-x';
     document.getElementById('result-banner').classList.remove('show');
@@ -88,24 +98,24 @@ function buildBoard() {
     }
 }
 
-// 수 놓기
+// 수 놓기 및 SVG 그리기
 function play(el, idx) {
     if (gameData[idx] !== '' || !active) return;
     playPencilSound();
     gameData[idx] = turn;
 
-    const svgNS = "http://www.w3.org/2000/svg";
-    const svg = document.createElementNS(svgNS, "svg");
-    svg.setAttribute("viewBox", "0 0 100 100");
-    svg.style.width = "70%"; svg.style.height = "70%";
-
     if (turn === 'X') {
-        svg.innerHTML = `<line x1="20" y1="20" x2="80" y2="80" style="stroke:#e94560; stroke-width:10; stroke-linecap:round;" />
-                         <line x1="80" y1="20" x2="20" y2="80" style="stroke:#e94560; stroke-width:10; stroke-linecap:round;" />`;
+        el.innerHTML = `
+            <svg viewBox="0 0 100 100" style="width:70%; height:70%;">
+                <line x1="20" y1="20" x2="80" y2="80" stroke="#e94560" stroke-width="12" stroke-linecap="round" />
+                <line x1="80" y1="20" x2="20" y2="80" stroke="#e94560" stroke-width="12" stroke-linecap="round" />
+            </svg>`;
     } else {
-        svg.innerHTML = `<circle cx="50" cy="50" r="35" style="stroke:#4cc9f0; stroke-width:10; stroke-linecap:round; fill:none;" />`;
+        el.innerHTML = `
+            <svg viewBox="0 0 100 100" style="width:70%; height:70%;">
+                <circle cx="50" cy="50" r="35" stroke="#4cc9f0" stroke-width="12" stroke-linecap="round" fill="none" />
+            </svg>`;
     }
-    el.appendChild(svg);
 
     if (checkWinner()) {
         showResult(turn + " 승리!");
@@ -124,7 +134,7 @@ function showResult(t) {
     document.getElementById('result-banner').classList.add('show');
     active = false;
     if (t.includes("승리")) {
-        winSound.play().catch(e => {});
+        winSound.play().catch(e => console.log("박수 소리 재생 차단됨"));
         startFireworks();
     }
 }
@@ -134,22 +144,11 @@ function checkWinner() {
     return lines.some(l => gameData[l[0]] && gameData[l[0]] === gameData[l[1]] && gameData[l[0]] === gameData[l[2]]);
 }
 
-// 이벤트 리스너 연결 (에러 방지를 위해 하나씩 연결)
+// 페이지 로드 시 모든 버튼 연결 (안전한 연결 방식)
 window.onload = () => {
-    const safeClick = (id, fn) => {
+    const connect = (id, fn) => {
         const el = document.getElementById(id);
         if (el) el.onclick = fn;
     };
 
-    safeClick('main-logo', playDingSound);
-    safeClick('start-btn', () => {
-        initAudio();
-        document.getElementById('start-screen').classList.replace('active', 'hidden');
-        document.getElementById('game-screen').classList.replace('hidden', 'active');
-        buildBoard();
-    });
-    safeClick('info-btn', () => document.getElementById('modal').classList.remove('hidden'));
-    safeClick('close-modal-btn', () => document.getElementById('modal').classList.add('hidden'));
-    safeClick('banner-restart-btn', buildBoard);
-    safeClick('back-btn', () => location.reload());
-};
+    connect('main-logo', playDing
