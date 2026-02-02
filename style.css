@@ -24,7 +24,6 @@ body {
     animation: floating 3s ease-in-out infinite;
     cursor: pointer;
     transition: transform 0.1s;
-    /* 드래그 및 저장 방지 */
     -webkit-user-drag: none;
     user-select: none;
     -webkit-touch-callout: none;
@@ -36,13 +35,18 @@ body {
     50% { transform: translateY(-10px); }
 }
 
-/* 이스터에그 문구 */
+/* 이스터에그 문구 (모바일 위치 보정) */
 .easter-egg {
     position: absolute;
-    bottom: 20px;
+    bottom: 60px; /* 모바일 하단 바를 피해 위치 상향 */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    text-align: center;
     font-size: 0.75rem;
-    color: rgba(255, 255, 255, 0.3);
+    color: rgba(255, 255, 255, 0.4);
     letter-spacing: 1px;
+    pointer-events: none;
 }
 
 .screen { width: 100vw; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; position: absolute; transition: 0.5s; }
@@ -85,7 +89,7 @@ body {
     transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     z-index: 1000; pointer-events: none;
 }
-#result-banner.show { transform: translateY(450px); pointer-events: auto; }
+#result-banner.show { transform: translateY(400px); pointer-events: auto; }
 
 .banner-content { background: linear-gradient(90deg, transparent, rgba(0,0,0,0.9), transparent); width: 100%; text-align: center; padding: 30px; }
 #winner-text { font-size: 4rem; margin: 0; color: var(--gold); text-shadow: 2px 2px 0 #000; letter-spacing: 5px; }
