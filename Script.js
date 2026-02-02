@@ -9,56 +9,68 @@ const mainLogo = document.getElementById('main-logo');
 let turn = 'X';
 let gameData = Array(9).fill('');
 let active = true;
-
-// --- 오디오 시스템 최적화 (재사용 방식) ---
 let audioCtx = null;
 
-function playDingSound() {
-    try {
-        // 처음 한 번만 AudioContext 생성
-        if (!audioCtx) {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        }
-
-        // 브라우저가 오디오를 중단시킨 경우(Suspend) 다시 시작
-        if (audioCtx.state === 'suspended') {
-            audioCtx.resume();
-        }
-
-        const oscillator = audioCtx.createOscillator();
-        const gainNode = audioCtx.createGain();
-
-        oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // 띵~ 소리
-
-        gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.5);
-
-        oscillator.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
-
-        oscillator.start();
-        oscillator.stop(audioCtx.currentTime + 0.5);
-    } catch(e) {
-        console.log("Audio play failed:", e);
+// 오디오 엔진 초기화 함수
+function initAudio() {
+    if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
     }
 }
 
-// 로고 클릭 이벤트
-mainLogo.onclick = () => {
-    playDingSound();
-    
-    // 시각적 피드백
-    mainLogo.style.filter = "drop-shadow(0 0 20px #fff)";
-    setTimeout(() => {
-        mainLogo.style.filter = "drop-shadow(0 0 10px rgba(255, 255, 255, 0.2))";
-    }, 200);
-};
+// 1. 로고용 "띵" 소리
+function playDingSound() {
+    initAudio();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, audioCtx.currentTime); 
+    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.5);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.5);
+}
 
-// --- 게임 제어 로직 ---
+// 2. 칸 클릭용 "연필 긋는" 소리 (화이트 노이즈 활용)
+function playPencilSound() {
+    initAudio();
+    const bufferSize = audioCtx.sampleRate * 0.1; // 0.1초 동안 재생
+    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+
+    // 사각거리는 노이즈 생성
+    for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+    }
+
+    const noise = audioCtx.createBufferSource();
+    noise.buffer = buffer;
+
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = 'bandpass'; // 연필 특유의 주파수 대역만 통과
+    filter.frequency.setValueAtTime(1000, audioCtx.currentTime);
+    filter.Q.setValueAtTime(1, audioCtx.currentTime);
+
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    noise.start();
+}
+
+mainLogo.onclick = playDingSound;
+
 document.getElementById('start-btn').onclick = () => {
-    // 게임 시작 시에도 오디오 컨텍스트를 활성화 (모바일 대응)
-    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    initAudio();
     startScreen.classList.replace('active', 'hidden');
     gameScreen.classList.replace('hidden', 'active');
     buildBoard();
@@ -92,6 +104,9 @@ function buildBoard() {
 
 function play(el, idx) {
     if(gameData[idx] !== '' || !active) return;
+    
+    playPencilSound(); // 칸을 누를 때 연필 소리 재생!
+    
     el.classList.add('clicked');
     gameData[idx] = turn;
 
